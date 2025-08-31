@@ -7,7 +7,8 @@ import {
   getAIFeedbacksCompletos,
   postAIFeedback,
   putAIFeedback,
-  deleteAIFeedback
+  deleteAIFeedback,
+  generateAIFeedback
 } from "./aiFeedback.controllers.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get("/subtopic/:subtopicId", getAIFeedbacksPorSubtopic);
 router.get("/step/:stepNumber", getAIFeedbacksPorStepNumber);
 router.get("/:id", getAIFeedbackPorId);
 router.post("/", postAIFeedback);
+router.post("/generate/:subtopicId", generateAIFeedback);
 router.put("/", putAIFeedback);
 router.delete("/:id", deleteAIFeedback);
 

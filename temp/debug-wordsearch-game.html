@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras: Introducción a Blockchain</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .game-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .game-title {
+            color: #333;
+            font-size: 2.5em;
+            margin: 0 0 10px 0;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .game-description {
+            color: #666;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+            margin-bottom: 20px;
+        }
+        
+        .game-content {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        .grid-container {
+            flex: 1;
+            min-width: 300px;
+        }
+        
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(10, 40px);
+            grid-template-rows: repeat(10, 40px);
+            gap: 2px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .grid-cell {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        
+        .grid-cell:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .grid-cell.selected {
+            background: #2196f3;
+            color: white;
+            border-color: #1976d2;
+        }
+        
+        .grid-cell.found {
+            background: #4caf50;
+            color: white;
+            border-color: #388e3c;
+        }
+        
+        .words-panel {
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .words-list {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+        }
+        
+        .words-title {
+            color: #333;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .word-item {
+            padding: 8px 12px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .word-item:hover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+        }
+        
+        .word-item.found {
+            background: #4caf50;
+            color: white;
+            border-color: #388e3c;
+            text-decoration: line-through;
+        }
+        
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .game-controls {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+            transform: translateY(-2px);
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .celebration {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .celebration.show {
+            display: block;
+            animation: celebrationPop 0.5s ease-out;
+        }
+        
+        @keyframes celebrationPop {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            display: none;
+        }
+        
+        .overlay.show {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">Sopa de Letras: Introducción a Blockchain</h1>
+            <p class="game-description">Encuentra las 6 palabras relacionadas con Introducción a Blockchain. Las palabras pueden estar en cualquier dirección: horizontal, vertical o diagonal.</p>
+            <div class="instructions">
+                <strong>Instrucciones:</strong> Arrastra el mouse para seleccionar las palabras ocultas en la grilla. Las palabras están relacionadas con el tema "Introducción a Blockchain" y pueden leerse en cualquier dirección.
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="grid-container">
+                <div class="word-grid" id="wordGrid"></div>
+                <div class="game-stats">
+                    <div class="stat-item">
+                        <div class="stat-value" id="foundWords">0</div>
+                        <div class="stat-label">Palabras Encontradas</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalWords">6</div>
+                        <div class="stat-label">Total de Palabras</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="gameTime">00:00</div>
+                        <div class="stat-label">Tiempo</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="words-panel">
+                <div class="words-list">
+                    <h3 class="words-title">Palabras a Encontrar</h3>
+                    <div id="wordsList"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-controls">
+            <button class="btn btn-primary" onclick="resetGame()">Nuevo Juego</button>
+            <button class="btn btn-primary" onclick="showHint()">Pista</button>
+        </div>
+    </div>
+    
+    <div class="overlay" id="overlay"></div>
+    <div class="celebration" id="celebration">
+        <h2>🎉 ¡Felicitaciones! 🎉</h2>
+        <p>Has encontrado todas las palabras</p>
+        <p>Tiempo: <span id="finalTime"></span></p>
+        <button class="btn btn-success" onclick="resetGame()">Jugar de Nuevo</button>
+    </div>
+
+    <script>
+        // Game Configuration - Will be replaced by AI
+        const WORDS_TO_FIND = ["INTRODUCCIÓN","BLOCKCHAIN","CONCEPTOS","HISTORIA","TECNOLOGÍA","FUNDAMENTOS"]; // ["PALABRA1", "PALABRA2", ...]
+        const GRID_SIZE = 10;
+        
+        // Game State
+        let gameGrid = [];
+        let foundWords = [];
+        let selectedCells = [];
+        let isSelecting = false;
+        let gameStartTime = Date.now();
+        let gameTimer;
+        
+        // Initialize Game
+        function initGame() {
+            generateGrid();
+            placeWords();
+            fillEmptySpaces();
+            renderGrid();
+            renderWordsList();
+            startTimer();
+        }
+        
+        function generateGrid() {
+            gameGrid = Array(GRID_SIZE).fill().map(() => Array(GRID_SIZE).fill(''));
+        }
+        
+        function placeWords() {
+            const directions = [
+                [0, 1],   // horizontal
+                [1, 0],   // vertical
+                [1, 1],   // diagonal down-right
+                [1, -1],  // diagonal down-left
+                [0, -1],  // horizontal reverse
+                [-1, 0],  // vertical reverse
+                [-1, -1], // diagonal up-left
+                [-1, 1]   // diagonal up-right
+            ];
+            
+            WORDS_TO_FIND.forEach(word => {
+                let placed = false;
+                let attempts = 0;
+                
+                while (!placed && attempts < 100) {
+                    const direction = directions[Math.floor(Math.random() * directions.length)];
+                    const startRow = Math.floor(Math.random() * GRID_SIZE);
+                    const startCol = Math.floor(Math.random() * GRID_SIZE);
+                    
+                    if (canPlaceWord(word, startRow, startCol, direction)) {
+                        placeWord(word, startRow, startCol, direction);
+                        placed = true;
+                    }
+                    attempts++;
+                }
+            });
+        }
+        
+        function canPlaceWord(word, row, col, direction) {
+            for (let i = 0; i < word.length; i++) {
+                const newRow = row + direction[0] * i;
+                const newCol = col + direction[1] * i;
+                
+                if (newRow < 0 || newRow >= GRID_SIZE || newCol < 0 || newCol >= GRID_SIZE) {
+                    return false;
+                }
+                
+                if (gameGrid[newRow][newCol] !== '' && gameGrid[newRow][newCol] !== word[i]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        
+        function placeWord(word, row, col, direction) {
+            for (let i = 0; i < word.length; i++) {
+                const newRow = row + direction[0] * i;
+                const newCol = col + direction[1] * i;
+                gameGrid[newRow][newCol] = word[i];
+            }
+        }
+        
+        function fillEmptySpaces() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    if (gameGrid[row][col] === '') {
+                        gameGrid[row][col] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+        
+        function renderGrid() {
+            const gridElement = document.getElementById('wordGrid');
+            gridElement.innerHTML = '';
+            
+            for (let row = 0; row < GRID_SIZE; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.textContent = gameGrid[row][col];
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    cell.addEventListener('mousedown', startSelection);
+                    cell.addEventListener('mouseenter', continueSelection);
+                    cell.addEventListener('mouseup', endSelection);
+                    
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+        
+        function renderWordsList() {
+            const wordsListElement = document.getElementById('wordsList');
+            wordsListElement.innerHTML = '';
+            
+            WORDS_TO_FIND.forEach(word => {
+                const wordElement = document.createElement('div');
+                wordElement.className = 'word-item';
+                wordElement.textContent = word;
+                wordElement.dataset.word = word;
+                
+                if (foundWords.includes(word)) {
+                    wordElement.classList.add('found');
+                }
+                
+                wordsListElement.appendChild(wordElement);
+            });
+        }
+        
+        function startSelection(e) {
+            isSelecting = true;
+            selectedCells = [e.target];
+            e.target.classList.add('selected');
+        }
+        
+        function continueSelection(e) {
+            if (isSelecting && !selectedCells.includes(e.target)) {
+                selectedCells.push(e.target);
+                e.target.classList.add('selected');
+            }
+        }
+        
+        function endSelection() {
+            if (isSelecting) {
+                checkSelectedWord();
+                clearSelection();
+                isSelecting = false;
+            }
+        }
+        
+        function checkSelectedWord() {
+            const selectedWord = selectedCells.map(cell => cell.textContent).join('');
+            const reversedWord = selectedWord.split('').reverse().join('');
+            
+            if (WORDS_TO_FIND.includes(selectedWord) && !foundWords.includes(selectedWord)) {
+                foundWords.push(selectedWord);
+                markWordAsFound(selectedCells);
+                updateStats();
+                checkGameComplete();
+            } else if (WORDS_TO_FIND.includes(reversedWord) && !foundWords.includes(reversedWord)) {
+                foundWords.push(reversedWord);
+                markWordAsFound(selectedCells);
+                updateStats();
+                checkGameComplete();
+            }
+        }
+        
+        function markWordAsFound(cells) {
+            cells.forEach(cell => {
+                cell.classList.add('found');
+                cell.classList.remove('selected');
+            });
+        }
+        
+        function clearSelection() {
+            selectedCells.forEach(cell => {
+                if (!cell.classList.contains('found')) {
+                    cell.classList.remove('selected');
+                }
+            });
+            selectedCells = [];
+        }
+        
+        function updateStats() {
+            document.getElementById('foundWords').textContent = foundWords.length;
+            renderWordsList();
+        }
+        
+        function checkGameComplete() {
+            if (foundWords.length === WORDS_TO_FIND.length) {
+                clearInterval(gameTimer);
+                showCelebration();
+            }
+        }
+        
+        function showCelebration() {
+            const finalTime = document.getElementById('gameTime').textContent;
+            document.getElementById('finalTime').textContent = finalTime;
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('celebration').classList.add('show');
+        }
+        
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('gameTime').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        function resetGame() {
+            clearInterval(gameTimer);
+            foundWords = [];
+            selectedCells = [];
+            isSelecting = false;
+            gameStartTime = Date.now();
+            
+            document.getElementById('overlay').classList.remove('show');
+            document.getElementById('celebration').classList.remove('show');
+            
+            initGame();
+        }
+        
+        function showHint() {
+            const remainingWords = WORDS_TO_FIND.filter(word => !foundWords.includes(word));
+            if (remainingWords.length > 0) {
+                const hintWord = remainingWords[Math.floor(Math.random() * remainingWords.length)];
+                alert(`Pista: Busca la palabra "${hintWord}"`);
+            }
+        }
+        
+        // Prevent context menu on right click
+        document.addEventListener('contextmenu', e => e.preventDefault());
+        
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
+

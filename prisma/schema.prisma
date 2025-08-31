@@ -24,9 +24,11 @@ model User {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
-  userRoles     UserRole[]
-  assignments   ClassAssignment[] // teacher's assignments
-  progress      Progress[] // can track both teacher and student progress
+  userRoles       UserRole[]
+  assignments     ClassAssignment[] // teacher's assignments
+  progress        Progress[] // can track both teacher and student progress
+  enrollments     Enrollment[] // student's enrollments in subjects
+  createdSubjects Subject[] @relation("SubjectCreator") // subjects created by this user
 
   @@index([email])
   @@index([createdAt])
@@ -75,11 +77,27 @@ model Grade {
 
 model Subject {
   id          String       @id @default(uuid())
-  name        String       @db.VarChar(100)
+  name        String       @db.VarChar(100)   // e.g. "Matemáticas", "Historia"
   description String?
+  
+  // Para contexto de plataforma online
+  category    String?      @db.VarChar(50)    // e.g. "blockchain", "programación" 
+  price       Decimal?     @db.Decimal(10,2)  // Price in USD (solo para cursos online)
+  duration    String?      @db.VarChar(50)    // e.g. "8 semanas", "3 meses"
+  difficulty  String?      @db.VarChar(20)    // "principiante", "intermedio", "avanzado"
+  
+  // Para contexto educativo formal
+  subjectType String?      @db.VarChar(20)    // "online_course" | "formal_subject" 
+  curriculum  String?      @db.Text          // Contenido curricular oficial
+  objectives  String?      @db.Text          // Objetivos de aprendizaje
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt @default(now())
+  createdBy   String?      // ID del teacher que creó este subject
 
   subtopics   Subtopic[]
   assignments ClassAssignment[]
+  creator     User?        @relation("SubjectCreator", fields: [createdBy], references: [id], onDelete: SetNull)
 
   @@map("subjects")
 }
@@ -112,9 +130,32 @@ model ClassAssignment {
   subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
   teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
 
-  schedules Schedule[]
+  schedules   Schedule[]
+  enrollments Enrollment[] // Estudiantes matriculados en esta asignación
 
   @@map("class_assignments")
+}
+
+// -----------------------------
+// STUDENT ENROLLMENTS
+// -----------------------------
+
+model Enrollment {
+  id           String    @id @default(uuid())
+  studentId    String    // Student user ID
+  assignmentId String    // ClassAssignment ID
+  enrolledAt   DateTime  @default(now())
+  status       String    @db.VarChar(20) @default("active") // "active", "dropped", "completed"
+  finalGrade   Decimal?  @db.Decimal(5,2) // Final grade 0.00-100.00
+  attendance   Decimal?  @db.Decimal(5,2) // Attendance percentage
+  
+  student    User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment ClassAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, assignmentId]) // Un estudiante no puede estar matriculado dos veces en la misma asignación
+  @@index([studentId])
+  @@index([assignmentId])
+  @@map("enrollments")
 }
 
 model Schedule {

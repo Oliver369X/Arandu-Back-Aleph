@@ -5,7 +5,8 @@ import {
   eliminarSubject,
   obtenerSubjectPorId,
   obtenerSubjectPorNombre,
-  obtenerSubjectsConSubtopics
+  obtenerSubjectsConSubtopics,
+  obtenerSubjectsPorCreador
 } from "./subject.models.js";
 import { crearSubjectSchema } from "./dto/subject.dto.js";
 import { actualizarSubjectSchema } from "./dto/subject.update.dto.js";
@@ -104,5 +105,24 @@ export const getSubjectsConSubtopics = async (req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({ error: error.message });
+  }
+};
+
+export const getSubjectsByCreator = async (req, res) => {
+  const { teacherId } = req.params;
+  try {
+    console.log(`🔍 [SubjectController] Obteniendo subjects creados por teacher: ${teacherId}`);
+    const response = await obtenerSubjectsPorCreador(teacherId);
+    res.status(200).json({
+      success: true,
+      data: response,
+      count: response?.length || 0
+    });
+  } catch (error) {
+    console.error(`❌ [SubjectController] Error obteniendo subjects por creador ${teacherId}:`, error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
   }
 };

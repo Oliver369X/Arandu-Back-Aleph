@@ -20,7 +20,12 @@ export const crearSubject = async (datos) => {
     const subject = await prisma.subject.create({
       data: {
         name: datos.name.toLowerCase().trim(),
-        description: datos.description?.trim() || null
+        description: datos.description?.trim() || null,
+        category: datos.category?.trim() || null,
+        price: datos.price || null,
+        duration: datos.duration?.trim() || null,
+        difficulty: datos.difficulty || null,
+        createdBy: datos.createdBy || null // ID del teacher que crea el subject
       }
     });
     return subject;
@@ -34,14 +39,32 @@ export const crearSubject = async (datos) => {
 
 export const actualizarSubject = async (datos) => {
   try {
+    const updateData = {};
+    
+    if (datos.name !== undefined) {
+      updateData.name = datos.name.toLowerCase().trim();
+    }
+    if (datos.description !== undefined) {
+      updateData.description = datos.description?.trim() || null;
+    }
+    if (datos.category !== undefined) {
+      updateData.category = datos.category?.trim() || null;
+    }
+    if (datos.price !== undefined) {
+      updateData.price = datos.price || null;
+    }
+    if (datos.duration !== undefined) {
+      updateData.duration = datos.duration?.trim() || null;
+    }
+    if (datos.difficulty !== undefined) {
+      updateData.difficulty = datos.difficulty || null;
+    }
+
     const subject = await prisma.subject.update({
       where: {
         id: datos.id
       },
-      data: {
-        name: datos.name ? datos.name.toLowerCase().trim() : undefined,
-        description: datos.description?.trim() || null
-      }
+      data: updateData
     });
     return subject;
   } catch (error) {
@@ -122,5 +145,36 @@ export const obtenerSubjectsConSubtopics = async () => {
     return subjects;
   } catch (error) {
     throw new Error(`Error fetching subjects with subtopics: ${error.message}`);
+  }
+};
+
+export const obtenerSubjectsPorCreador = async (teacherId) => {
+  try {
+    console.log(`🔍 [SubjectModel] Buscando subjects creados por teacher: ${teacherId}`);
+    
+    const subjects = await prisma.subject.findMany({
+      where: {
+        createdBy: teacherId
+      },
+      include: {
+        subtopics: true,
+        creator: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+
+    console.log(`✅ [SubjectModel] Encontrados ${subjects.length} subjects creados por teacher ${teacherId}`);
+    return subjects;
+  } catch (error) {
+    console.error(`❌ [SubjectModel] Error obteniendo subjects por creador:`, error);
+    throw new Error(`Error fetching subjects by creator: ${error.message}`);
   }
 };
