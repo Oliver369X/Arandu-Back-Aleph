@@ -1,4 +1,4 @@
-import bcrypt from "bcrypt"; 
+import bcrypt from "bcryptjs"; 
 import jwt from "jsonwebtoken"; 
 import {obtenerUsuarioPorSuCorreo} from "../../components/user/user.models.js";
 

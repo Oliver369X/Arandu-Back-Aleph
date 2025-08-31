@@ -11,7 +11,7 @@ import {
   asignarRolUsuario,
   removerRolUsuario
 } from "./user.models.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import { registrarUsuarioSchema } from "./dto/userCreate.dto.js";
 import { actualizarUsuarioSchema } from "./dto/usuario.update.dto.js";
 import { asignarRolSchema, removerRolSchema } from "./dto/role.dto.js";

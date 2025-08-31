@@ -25,7 +25,8 @@
     "demo:production": "node scripts/demo-production-setup.js",
     "deploy:validate": "node scripts/deploy-render.js",
     "deploy:optimize": "node scripts/deploy-render.js --create-optimized",
-    "fix:es-modules": "bash apply-es-modules-fix.sh"
+    "fix:es-modules": "bash apply-es-modules-fix.sh",
+    "fix:bcrypt": "bash apply-bcrypt-fix.sh"
   },
   "keywords": [],
   "author": "",
@@ -36,7 +37,7 @@
     "@openzeppelin/contracts": "^5.4.0",
     "@prisma/client": "^6.6.0",
     "axios": "^1.8.4",
-    "bcrypt": "^5.1.1",
+    "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "ethers": "^6.15.0",
