@@ -11,6 +11,8 @@ import routerSchedule from "../components/schedule/schedule.routes.js";
 import routerAIFeedback from "../components/aiFeedback/aiFeedback.routes.js";
 import routerAIWritingAssistant from "../components/AI/aiWritingAssistant.routes.js";
 import routerAIGame from "../components/AIGame/aiGame.routes.js";
+// Blockchain integration
+import blockchainRouter from "../components/blockchain/blockchainRoutes.js";
 
 const router = Router(); 
 router.use('/usuario', routerUser); 
@@ -25,6 +27,8 @@ router.use('/schedules', routerSchedule);
 router.use('/ai-feedback', routerAIFeedback);
 router.use('/ai-writing-assistant', routerAIWritingAssistant);
 router.use('/ai-games', routerAIGame);
+// Blockchain routes
+router.use('/blockchain', blockchainRouter);
 
 export default router;
 

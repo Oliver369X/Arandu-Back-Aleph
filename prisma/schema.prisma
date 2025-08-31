@@ -24,12 +24,29 @@ model User {
   createdAt  DateTime     @default(now())
   updatedAt  DateTime     @updatedAt
 
+  // Blockchain integration fields
+  walletAddress     String?  @unique
+  walletType        String?  @default("web3auth")
+  blockchainVerified Boolean @default(false)
+  teacherRoleGranted Boolean @default(false)
+  
+  // Cached blockchain data for performance
+  cachedTokenBalance String  @default("0")
+  cachedBadgeCount   Int     @default(0)
+  cachedStreakCount  Int     @default(0)
+  lastBlockchainSync DateTime @default(now())
+
   userRoles     UserRole[]
   assignments   ClassAssignment[] // teacher's assignments
   progress      Progress[] // can track both teacher and student progress
+  activities    Activity[] // blockchain activity completions
+  achievements  Achievement[] // blockchain achievements
+  content       Content[] // Content created by the user
+  contentPurchases ContentPurchase[] @relation("UserContentPurchases") // Content purchased by the user
 
   @@index([email])
   @@index([createdAt])
+  @@index([walletAddress])
   @@map("users")
 }
 
@@ -205,4 +222,166 @@ model AIGame {
   @@index([agentType])
   @@index([isActive])
   @@map("ai_games")
+}
+
+// -----------------------------
+// BLOCKCHAIN INTEGRATION
+// -----------------------------
+
+model Activity {
+  id          String   @id @default(uuid())
+  userId      String
+  activityId  String   // Reference to the activity/game/quiz completed
+  activityType String  @db.VarChar(50) // "quiz", "game", "lesson", etc.
+  answers     Json?    // Student answers
+  score       Float?   // Score achieved (0-100)
+  
+  // Blockchain integration
+  tokensEarned      String?  // Amount of ANDU tokens earned
+  transactionHash   String?  @unique // Blockchain transaction hash
+  badgesEarned      Json?    // Array of badge names earned
+  blockchainProcessed Boolean @default(false)
+  
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([activityType])
+  @@index([blockchainProcessed])
+  @@map("activities")
+}
+
+model Achievement {
+  id              String   @id @default(uuid())
+  userId          String
+  walletAddress   String
+  
+  type            String   @db.VarChar(50) // 'badge', 'certificate', 'token_milestone'
+  name            String   @db.VarChar(100)
+  description     String?  @db.Text
+  tokenId         BigInt?  // For NFTs
+  contractAddress String?  @db.VarChar(42)
+  transactionHash String   @unique
+  blockNumber     BigInt?
+  
+  metadata        Json?    // Additional achievement data
+  earnedAt        DateTime @default(now())
+  
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([walletAddress])
+  @@index([type])
+  @@map("achievements")
+}
+
+model BlockchainEvent {
+  id              String   @id @default(uuid())
+  contractAddress String   @db.VarChar(42)
+  eventName       String   @db.VarChar(100)
+  blockNumber     BigInt
+  transactionHash String   @unique
+  eventData       Json
+  processed       Boolean  @default(false)
+  processedAt     DateTime @default(now())
+  
+  @@index([contractAddress])
+  @@index([eventName])
+  @@index([blockNumber])
+  @@index([processed])
+  @@map("blockchain_events")
+}
+
+// New models for complete blockchain integration
+model Content {
+  id          String   @id @default(uuid())
+  teacherId   String
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  content     Json     // Your existing content structure
+  
+  // Blockchain NFT data
+  masterTokenId    BigInt?  @map("master_token_id")
+  licenseTokenId   BigInt?  @map("license_token_id")
+  contractAddress  String?  @db.VarChar(42) @map("contract_address")
+  ipfsHash         String?  @db.VarChar(255) @map("ipfs_hash")
+  metadataUri      String?  @db.VarChar(500) @map("metadata_uri")
+  
+  // Marketplace data
+  price            String?  // Price in ANDU tokens
+  initialSupply    Int?     @map("initial_supply")
+  royaltyBps       Int?     @map("royalty_bps") // Basis points (500 = 5%)
+  
+  // Status
+  status           String   @default("draft") @db.VarChar(50) // 'draft', 'uploaded', 'minted', 'published'
+  mintTransactionHash String? @unique @map("mint_transaction_hash")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  teacher   User     @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  purchases ContentPurchase[]
+  
+  @@index([teacherId])
+  @@index([status])
+  @@map("content")
+}
+
+model ContentPurchase {
+  id              String   @id @default(uuid())
+  contentId       String
+  buyerUserId     String
+  buyerWalletAddress String @db.VarChar(42) @map("buyer_wallet_address")
+  
+  // Purchase details
+  quantity        Int
+  pricePerLicense String   @map("price_per_license")
+  totalCost       String   @map("total_cost")
+  
+  // Blockchain transaction
+  transactionHash String   @unique @map("transaction_hash")
+  blockNumber     BigInt?  @map("block_number")
+  
+  purchasedAt DateTime @default(now()) @map("purchased_at")
+  
+  content Content @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  buyer User @relation("UserContentPurchases", fields: [buyerUserId], references: [id], onDelete: Cascade)
+  
+  @@index([contentId])
+  @@index([buyerUserId])
+  @@map("content_purchases")
+}
+
+model SyncStatus {
+  id                String   @id @default(uuid())
+  contractAddress   String   @unique @db.VarChar(42) @map("contract_address")
+  contractName      String   @db.VarChar(100) @map("contract_name")
+  lastSyncedBlock   BigInt   @default(0) @map("last_synced_block")
+  lastSyncTime      DateTime @default(now()) @map("last_sync_time")
+  syncErrors        Int      @default(0) @map("sync_errors")
+  isHealthy         Boolean  @default(true) @map("is_healthy")
+  
+  @@map("sync_status")
+}
+
+model SystemMetrics {
+  id              String   @id @default(uuid())
+  
+  // Platform metrics
+  totalUsers      Int      @map("total_users")
+  activeUsers24h  Int      @map("active_users_24h")
+  totalActivities Int      @map("total_activities")
+  
+  // Blockchain metrics
+  totalTokensDistributed String @map("total_tokens_distributed")
+  totalBadgesEarned      Int    @map("total_badges_earned")
+  totalCertificatesIssued Int   @map("total_certificates_issued")
+  
+  // Transparency
+  reportHash      String?  @db.VarChar(66) @map("report_hash") // Hash anchored on blockchain
+  anchorTxHash    String?  @db.VarChar(66) @map("anchor_tx_hash")
+  
+  generatedAt DateTime @default(now()) @map("generated_at")
+  
+  @@map("system_metrics")
 }

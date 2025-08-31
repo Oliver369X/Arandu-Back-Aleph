@@ -1,49 +1,97 @@
-# SchoolAI - Backend API Documentation
+# 🚀 ARANDU Backend - SchoolAI with Blockchain Integration
 
-## 📋 General Description
+## 📋 Overview
 
-SchoolAI is a robust and modern backend designed for educational platforms that combines **Artificial Intelligence** with **Blockchain technology**. The system provides RESTful APIs for user management, educational content, progress tracking, and AI-powered educational content generation.
+**ARANDU** is a comprehensive educational platform backend that combines **Artificial Intelligence** with **Blockchain technology**. Built with modern technologies, it provides RESTful APIs for user management, educational content, progress tracking, AI-powered content generation, and complete blockchain integration for transparent educational rewards.
 
-## 🏗️ Project Architecture
+## 🔗 Blockchain Integration Features
+
+### 🎯 Smart Contracts
+- **ANDU Token**: ERC-20 token for educational rewards
+- **AranduRewards**: Main contract for reward distribution
+- **AranduBadges**: NFT contract for achievement badges
+- **AranduCertificates**: NFT contract for course certificates
+- **DataAnchor**: Contract for anchoring educational data on-chain
+
+### 🌐 Network
+- **Network**: Lisk Sepolia Testnet
+- **Chain ID**: 4202
+- **Explorer**: [Sepolia Blockscout](https://sepolia-blockscout.lisk.com)
+
+### 🎓 Student Features
+- ✅ Complete learning activities and earn ANDU tokens
+- ✅ Collect NFT badges for achievements
+- ✅ Earn NFT certificates for course completion
+- ✅ View blockchain transaction history
+- ✅ Real-time balance updates
+
+### 👨‍🏫 Teacher Features
+- ✅ Create NFT educational content
+- ✅ Verify teacher credentials on-chain
+- ✅ Distribute rewards to students
+- ✅ Issue certificates for completed courses
+- ✅ Track teaching impact through blockchain metrics
+
+### 👨‍💼 Admin Features
+- ✅ Batch reward distribution
+- ✅ System-wide statistics and analytics
+- ✅ Failed transaction retry mechanisms
+- ✅ Real-time event monitoring
+- ✅ Data anchoring for transparency
+
+## 🏗️ Architecture
 
 ### Technology Stack
 - **Runtime**: Node.js with ES Modules
 - **Framework**: Express.js 4.18.2
 - **Database**: PostgreSQL with Prisma ORM
 - **Authentication**: JWT (JSON Web Tokens)
-- **AI**: Google Generative AI (Gemini 2.0)
-- **Blockchain**: Ethereum/Mantle Network with Ethers.js
+- **AI Integration**: Google Generative AI (Gemini 2.0)
+- **Blockchain**: Ethereum/Lisk Sepolia with Ethers.js
 - **Documentation**: Swagger/OpenAPI 3.0
 - **Validation**: Express-validator + Zod
 - **Security**: bcrypt, CORS
 
-### Folder Structure
+### Project Structure
 ```
-SchoolAI/
-├── prisma/                 # Database schema
-│   ├── schema.prisma      # Data models
-│   └── migrations/        # Database migrations
+ARANDU-Back-Aleph/
+├── prisma/                    # Database schema and migrations
+│   ├── schema.prisma         # Data models with blockchain extensions
+│   └── migrations/           # Database migrations
 ├── src/
-│   ├── app.js            # Server configuration
-│   ├── index.js          # Entry point
-│   ├── components/       # Application modules
-│   │   ├── user/         # User management
-│   │   ├── role/         # Roles and permissions
-│   │   ├── grade/        # Academic grades
-│   │   ├── subject/      # Subjects
-│   │   ├── subtopic/     # Subtopics
-│   │   ├── classAssignment/ # Class assignments
-│   │   ├── schedule/     # Schedules
-│   │   ├── progress/     # Progress tracking
-│   │   ├── aiFeedback/   # AI feedback
-│   │   └── AI/           # AI writing assistant
-│   ├── services/         # External services
-│   │   ├── auth/         # Authentication
-│   │   └── nftService.js # Blockchain services
-│   ├── middlewares/      # Middlewares
-│   ├── validators/       # Validations
-│   ├── helpers/          # Utilities
-│   └── config/           # Configurations
+│   ├── app.js               # Server configuration
+│   ├── index.js             # Entry point with dotenv
+│   ├── components/          # Feature modules
+│   │   ├── user/            # User management
+│   │   ├── role/            # Roles and permissions
+│   │   ├── grade/           # Academic grades
+│   │   ├── subject/         # Subjects and curriculum
+│   │   ├── subtopic/        # Detailed learning topics
+│   │   ├── classAssignment/ # Assignments and tasks
+│   │   ├── schedule/        # Class scheduling
+│   │   ├── progress/        # Learning progress tracking
+│   │   ├── aiFeedback/      # AI-powered feedback
+│   │   ├── AI/              # AI writing assistant
+│   │   ├── AIGame/          # AI-generated educational games
+│   │   └── blockchain/      # Complete blockchain integration
+│   ├── services/            # External services and integrations
+│   │   ├── auth/            # Authentication services
+│   │   ├── AranduContractService.js  # Blockchain contract interactions
+│   │   ├── BlockchainDatabaseService.js  # Blockchain data management
+│   │   ├── BlockchainEventService.js     # Event listening and processing
+│   │   ├── PrismaAranduService.js        # Database operations
+│   │   └── nftService.js     # NFT and token services
+│   ├── middlewares/         # Custom middlewares
+│   ├── validators/          # Input validation
+│   ├── helpers/             # Utility functions
+│   ├── config/              # Configuration files
+│   └── abis/                # Smart contract ABIs
+├── scripts/
+│   ├── testing/             # Test automation scripts
+│   ├── utils/               # Utility and maintenance scripts
+│   └── migrations/          # Database migration scripts
+├── temp/                    # Temporary files (auto-cleaned)
+└── public/                  # Static assets (if needed)
 ```
 
 ## 🗄️ Data Model (Prisma Schema)
@@ -51,6 +99,7 @@ SchoolAI/
 ### Main Entities
 
 #### User (Users)
+
 ```prisma
 model User {
   id         String       @id @default(uuid())
@@ -69,6 +118,7 @@ model User {
 ```
 
 #### Role (Roles)
+
 ```prisma
 model Role {
   id          String     @id @default(uuid())
@@ -79,6 +129,7 @@ model Role {
 ```
 
 #### Academic Structure
+
 - **Grade**: Academic grades (6th Grade A, etc.)
 - **Subject**: Subjects (Mathematics, Science, etc.)
 - **Subtopic**: Specific subtopics within a subject
@@ -86,6 +137,7 @@ model Role {
 - **Schedule**: Class schedules
 
 #### Progress (Progress)
+
 ```prisma
 model Progress {
   id           String   @id @default(uuid())
@@ -100,6 +152,7 @@ model Progress {
 ```
 
 #### AI Feedback
+
 ```prisma
 model AIFeedBack {
   id              String   @id @default(uuid())
@@ -120,17 +173,20 @@ model AIFeedBack {
 ## 🔌 API Endpoints
 
 ### Base URL
-```
+
+```bash
 Development: http://localhost:3001/api-v1
 Production: https://api.schoolai.com/api-v1
 ```
 
 ### Authentication
-```
+
+```bash
 POST /api-v1/auth/login
 ```
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",

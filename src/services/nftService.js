@@ -1,5 +1,9 @@
 import { ethers } from 'ethers';
-import BookNFTABI from '../contracts/BookNFT.json' assert { type: 'json' };
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
+
+const BookNFTABI = require('../contracts/BookNFT.json');
 
 class NFTService {
   constructor() {
@@ -18,11 +22,11 @@ class NFTService {
         currency: 'MNT'
       }
     };
-    
+
     // Contract configuration
     this.contractAddress = process.env.NFT_CONTRACT_ADDRESS;
     this.network = process.env.NFT_NETWORK || 'mantle'; // mantle or mantleMainnet
-    
+
     // Initialize provider
     this.provider = new ethers.JsonRpcProvider(this.networkConfig[this.network].rpcUrl);
   }
@@ -34,21 +38,21 @@ class NFTService {
     try {
       if (typeof window !== 'undefined' && window.ethereum) {
         const provider = new ethers.BrowserProvider(window.ethereum);
-        
+
         // Request account access
         await provider.send("eth_requestAccounts", []);
-        
+
         // Get signer
         const signer = await provider.getSigner();
-        
+
         // Check if we're on the correct network
         const network = await provider.getNetwork();
         const expectedChainId = this.networkConfig[this.network].chainId;
-        
+
         if (network.chainId !== BigInt(expectedChainId)) {
           await this.switchNetwork();
         }
-        
+
         return { provider, signer };
       } else {
         throw new Error('MetaMask or other wallet not found');
@@ -169,16 +173,16 @@ class NFTService {
     try {
       // Connect to wallet
       const { signer } = await this.connectWallet();
-      
+
       // Create contract instance
       const contract = new ethers.Contract(this.contractAddress, BookNFTABI.abi, signer);
-      
+
       // Create metadata
       const metadata = this.createNFTMetadata(book);
-      
+
       // Upload metadata to IPFS
       const tokenURI = await this.uploadMetadataToIPFS(metadata);
-      
+
       // Prepare book metadata for contract
       const bookMetadata = {
         title: book.title,
@@ -191,10 +195,10 @@ class NFTService {
         maxSupply: book.maxSupply || 0,
         currentSupply: book.currentSupply
       };
-      
+
       // Convert book ID to uint256 (you might want to use a different mapping)
       const bookId = ethers.keccak256(ethers.toUtf8Bytes(book.id));
-      
+
       // Estimate gas
       const gasEstimate = await contract.mintBookNFT.estimateGas(
         bookId,
@@ -203,7 +207,7 @@ class NFTService {
         userAddress,
         { value: ethers.parseEther(book.nftPrice.toString()) }
       );
-      
+
       // Mint NFT
       const tx = await contract.mintBookNFT(
         bookId,
@@ -215,10 +219,10 @@ class NFTService {
           gasLimit: gasEstimate.mul(120).div(100) // Add 20% buffer
         }
       );
-      
+
       // Wait for transaction confirmation
       const receipt = await tx.wait();
-      
+
       // Get token ID from event
       const mintEvent = receipt.logs.find(log => {
         try {
@@ -228,13 +232,13 @@ class NFTService {
           return false;
         }
       });
-      
+
       let tokenId;
       if (mintEvent) {
         const parsed = contract.interface.parseLog(mintEvent);
         tokenId = parsed.args.tokenId.toString();
       }
-      
+
       return {
         success: true,
         transactionHash: receipt.hash,
@@ -244,7 +248,7 @@ class NFTService {
         gasUsed: receipt.gasUsed.toString(),
         effectiveGasPrice: receipt.effectiveGasPrice.toString()
       };
-      
+
     } catch (error) {
       console.error('Error minting NFT:', error);
       throw error;
@@ -257,11 +261,11 @@ class NFTService {
   async getNFTOwnership(tokenId) {
     try {
       const contract = new ethers.Contract(this.contractAddress, BookNFTABI.abi, this.provider);
-      
+
       const owner = await contract.ownerOf(tokenId);
       const tokenURI = await contract.tokenURI(tokenId);
       const bookId = await contract.getBookId(tokenId);
-      
+
       return {
         tokenId: tokenId.toString(),
         owner: owner,
@@ -280,10 +284,10 @@ class NFTService {
   async getBookNFTs(bookId) {
     try {
       const contract = new ethers.Contract(this.contractAddress, BookNFTABI.abi, this.provider);
-      
+
       const tokenIds = await contract.getBookTokenIds(bookId);
       const metadata = await contract.getBookMetadata(bookId);
-      
+
       return {
         tokenIds: tokenIds.map(id => id.toString()),
         metadata: {
@@ -311,10 +315,10 @@ class NFTService {
     try {
       const { signer } = await this.connectWallet();
       const contract = new ethers.Contract(this.contractAddress, BookNFTABI.abi, signer);
-      
+
       const tx = await contract.transferFrom(fromAddress, toAddress, tokenId);
       const receipt = await tx.wait();
-      
+
       return {
         success: true,
         transactionHash: receipt.hash,
@@ -332,11 +336,11 @@ class NFTService {
   async getTransactionStatus(txHash) {
     try {
       const receipt = await this.provider.getTransactionReceipt(txHash);
-      
+
       if (!receipt) {
         return { status: 'pending' };
       }
-      
+
       return {
         status: receipt.status === 1 ? 'confirmed' : 'failed',
         blockNumber: receipt.blockNumber,
