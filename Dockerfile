@@ -12,7 +12,7 @@ RUN apk add --no-cache \
     python3 \
     make \
     g++ \
-    openssl1.1-compat
+    openssl-dev
 
 # Configurar directorio de trabajo
 WORKDIR /app
@@ -34,7 +34,7 @@ RUN apk add --no-cache \
     python3 \
     make \
     g++ \
-    openssl1.1-compat
+    openssl-dev
 
 WORKDIR /app
 
@@ -56,7 +56,7 @@ FROM node:20-alpine AS runner
 # Instalar dependencias del sistema para runtime
 RUN apk add --no-cache \
     dumb-init \
-    openssl1.1-compat \
+    openssl-dev \
     ca-certificates
 
 WORKDIR /app

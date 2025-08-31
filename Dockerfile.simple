@@ -1,0 +1,54 @@
+# 🎓 Dockerfile Simple para Render - SchoolAI Backend
+# Versión simplificada sin multi-stage builds
+
+FROM node:20-alpine
+
+# Instalar dependencias del sistema
+RUN apk add --no-cache \
+    dumb-init \
+    ca-certificates \
+    python3 \
+    make \
+    g++ \
+    curl
+
+WORKDIR /app
+
+# Variables de entorno
+ENV NODE_ENV=production
+ENV PORT=3001
+
+# Crear usuario no-root
+RUN addgroup --system --gid 1001 schoolai && \
+    adduser --system --uid 1001 schoolai
+
+# Copiar archivos de dependencias
+COPY package.json package-lock.json* ./
+
+# Instalar dependencias
+RUN npm ci --only=production && \
+    npm cache clean --force
+
+# Copiar código fuente
+COPY . .
+
+# Generar Prisma Client
+RUN npx prisma generate
+
+# Crear directorios necesarios
+RUN mkdir -p /app/temp /app/uploads && \
+    chown -R schoolai:schoolai /app
+
+# Cambiar a usuario no-root
+USER schoolai
+
+# Exponer puerto
+EXPOSE 3001
+
+# Health check simple
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3001/api-v1/health || exit 1
+
+# Comando de inicio
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["npm", "start"]

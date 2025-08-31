@@ -1,0 +1,50 @@
+# 🚀 Configuración de Render para SchoolAI Backend
+
+services:
+  - type: web
+    name: arandu-schoolai-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free  # o starter/standard según necesidades
+    healthCheckPath: /api-v1/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
+      # DATABASE_URL se configurará automáticamente si usas PostgreSQL de Render
+      # Agregar manualmente en el dashboard:
+      # - JWT_SECRET
+      # - GEMINI_API_KEY (opcional)
+      # - FAL_KEY (opcional)
+    
+    # Configuración de auto-deploy
+    autoDeploy: true
+    branch: main
+    
+    # Configuración de recursos
+    disk: 
+      name: arandu-storage
+      mountPath: /app/uploads
+      sizeGB: 1
+
+databases:
+  - name: arandu-postgres
+    databaseName: arandu_schoolai
+    user: arandu_user
+    plan: free  # 0.1 CPU, 256 MB RAM, 1 GB storage
+    
+# Variables de entorno que necesitas configurar manualmente en Render:
+# 
+# OBLIGATORIAS:
+# - JWT_SECRET=tu-secreto-jwt-muy-seguro-de-al-menos-32-caracteres
+# - DATABASE_URL=postgresql://... (se genera automáticamente)
+# 
+# OPCIONALES (para funcionalidades de IA):
+# - GEMINI_API_KEY=tu-api-key-de-google-gemini
+# - FAL_KEY=tu-api-key-de-fal-ai
+# 
+# CONFIGURACIÓN RECOMENDADA:
+# - Build Command: npm run build-prod
+# - Start Command: npm start
+# - Health Check Path: /api-v1/health

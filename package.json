@@ -16,7 +16,15 @@
     "test:aigame": "node scripts/test-aigame.js",
     "test:swagger": "node scripts/test-swagger.js",
     "test:aigame-endpoints": "node scripts/test-aigame-endpoints.js",
-    "test:game-generation": "node scripts/test-game-generation.js"
+    "test:game-generation": "node scripts/test-game-generation.js",
+    "populate:production": "node scripts/populate-production-games.js",
+    "verify:production": "node scripts/verify-production-data.js",
+    "reset:production": "node scripts/reset-production-data.js",
+    "setup:production": "npm run populate:production && npm run verify:production",
+    "fresh:production": "node scripts/reset-production-data.js --force && npm run setup:production",
+    "demo:production": "node scripts/demo-production-setup.js",
+    "deploy:validate": "node scripts/deploy-render.js",
+    "deploy:optimize": "node scripts/deploy-render.js --create-optimized"
   },
   "keywords": [],
   "author": "",
