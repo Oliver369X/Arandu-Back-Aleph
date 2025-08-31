@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String       @id @default(uuid())
+  name       String       @db.VarChar(100)
+  email      String       @unique @db.VarChar(255)
+  password   String       @db.VarChar(255)
+  image      String?
+  bio        String?      @db.Text
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  userRoles     UserRole[]
+  assignments   ClassAssignment[] // teacher's assignments
+  progress      Progress[] // can track both teacher and student progress
+
+  @@index([email])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Role {
+  id          String     @id @default(uuid())
+  name        String     @unique @db.VarChar(50) // "teacher", "admin", "student"
+  description String
+  permissions String     @db.Text // JSON permissions
+
+  userRoles UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id         String    @id @default(uuid())
+  userId     String
+  roleId     String
+  assignedAt DateTime  @default(now())
+  expiresAt  DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@index([userId])
+  @@map("user_roles")
+}
+
+// -----------------------------
+// ACADEMIC STRUCTURE
+// -----------------------------
+
+model Grade {
+  id        String   @id @default(uuid())
+  name      String   @db.VarChar(50) // e.g. "6th Grade A"
+  year      Int      // academic year, e.g. 2025
+
+  assignments ClassAssignment[]
+
+  @@map("grades")
+}
+
+model Subject {
+  id          String       @id @default(uuid())
+  name        String       @db.VarChar(100)
+  description String?
+
+  subtopics   Subtopic[]
+  assignments ClassAssignment[]
+
+  @@map("subjects")
+}
+
+model Subtopic {
+  id          String     @id @default(uuid())
+  subjectId   String
+  name        String     @db.VarChar(100)
+  description String?
+
+  subject      Subject         @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  progress     Progress[]
+  aiFeedBacks  AIFeedBack[] // Teaching guides for this subtopic
+  aiGames      AIGame[] // Educational games for this subtopic
+
+  @@map("subtopics")
+}
+
+// -----------------------------
+// CLASS ASSIGNMENTS & SCHEDULE
+// -----------------------------
+
+model ClassAssignment {
+  id        String   @id @default(uuid())
+  gradeId   String
+  subjectId String
+  teacherId String
+
+  grade   Grade   @relation(fields: [gradeId], references: [id], onDelete: Cascade)
+  subject Subject @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  teacher User    @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  schedules Schedule[]
+
+  @@map("class_assignments")
+}
+
+model Schedule {
+  id           String   @id @default(uuid())
+  assignmentId String
+  dayOfWeek    String   @db.VarChar(20) // e.g. "Monday"
+  startTime    DateTime
+  endTime      DateTime
+  quarter      String   @db.VarChar(20) // e.g. "2025-Q1"
+
+  assignment ClassAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@map("schedules")
+}
+
+// -----------------------------
+// PROGRESS TRACKING (UNIVERSAL)
+// -----------------------------
+
+model Progress {
+  id           String   @id @default(uuid())
+  userId       String   // can be teacher or student
+  subtopicId   String
+  progressType String   @db.VarChar(20) // "learning", "teaching", "mastery"
+  percentage   Decimal  @db.Decimal(5,2) // percentage 0.00–100.00
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subtopicId, progressType])
+  @@index([userId])
+  @@index([subtopicId])
+  @@map("progress")
+}
+
+// -----------------------------
+// AI FEEDBACK - TEACHING GUIDE
+// -----------------------------
+
+model AIFeedBack {
+  id              String   @id @default(uuid())
+  subtopicId      String
+  timeMinutes     Int      // total lesson time
+  stepNumber      Int      // order of steps
+  stepName        String   @db.VarChar(100)
+  content         String   @db.Text
+  studentActivity String?  @db.VarChar(455)
+  timeAllocation  String   @db.VarChar(455)  // minutes for this step
+  materialsNeeded String?  @db.VarChar(400)
+  successIndicator String? @db.VarChar(400)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([subtopicId])
+  @@index([stepNumber])
+  @@map("ai_feedback")
+}
+
+// -----------------------------
+// AI GAMES - EDUCATIONAL GAMES
+// -----------------------------
+
+model AIGame {
+  id          String   @id @default(uuid())
+  subtopicId  String
+  gameType    String   @db.VarChar(50) // "wordsearch", "quiz", "memory", "puzzle", "crossword", "matching", "threejs", "pixijs", "adaptive"
+  agentType   String   @db.VarChar(50) // "specialized" or "free"
+  title       String   @db.VarChar(200)
+  description String   @db.Text
+  instructions String  @db.Text // Quick tooltip/instructions
+  htmlContent String   @db.Text // Complete HTML game code
+  difficulty  String   @db.VarChar(20) // "easy", "medium", "hard"
+  estimatedTime Int    // estimated play time in minutes
+  isActive    Boolean  @default(true)
+  playCount   Int      @default(0) // track how many times it's been played
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subtopic Subtopic @relation(fields: [subtopicId], references: [id], onDelete: Cascade)
+
+  @@index([subtopicId])
+  @@index([gameType])
+  @@index([agentType])
+  @@index([isActive])
+  @@map("ai_games")
+}

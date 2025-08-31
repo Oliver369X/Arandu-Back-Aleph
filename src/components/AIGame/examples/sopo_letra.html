@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sopa de Letras - Animales Divertidos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(45deg, #87CEEB, #98FB98, #FFB6C1, #F0E68C);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            padding: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #FF6B35;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #4169E1;
+            font-size: 1.2em;
+            margin-bottom: 30px;
+        }
+
+        .game-area {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .grid-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .word-grid {
+            display: grid;
+            grid-template-columns: repeat(20, 30px);
+            grid-template-rows: repeat(15, 30px);
+            gap: 2px;
+            background: #E6E6FA;
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px solid #9370DB;
+        }
+
+        .letter {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+            color: #333;
+        }
+
+        .letter:hover {
+            transform: scale(1.1);
+            background: #FFE4E1;
+        }
+
+        .letter.selected {
+            background: #FFD700;
+            border-color: #FFA500;
+            animation: bounce 0.3s ease;
+        }
+
+        .letter.found {
+            background: #90EE90;
+            border-color: #32CD32;
+            color: #006400;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+        }
+
+        .words-list {
+            background: #F0F8FF;
+            border-radius: 15px;
+            padding: 20px;
+            border: 3px solid #4169E1;
+            min-width: 250px;
+        }
+
+        .words-title {
+            color: #4169E1;
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .word-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 0;
+            font-size: 1.1em;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+
+        .word-item.found {
+            color: #32CD32;
+            text-decoration: line-through;
+            font-weight: bold;
+        }
+
+        .animal-emoji {
+            margin-right: 10px;
+            font-size: 1.3em;
+        }
+
+        .score {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(45deg, #FF6B35, #F7931E);
+            color: white;
+            border-radius: 15px;
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .celebration {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #FFD700, #FF6B35);
+            color: white;
+            padding: 40px;
+            border-radius: 20px;
+            font-size: 2em;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            animation: celebrateAnim 0.5s ease-out;
+        }
+
+        @keyframes celebrateAnim {
+            0% { transform: translate(-50%, -50%) scale(0); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
+
+        .instructions {
+            background: #FFFACD;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border: 2px solid #DAA520;
+            text-align: center;
+            color: #8B4513;
+        }
+
+        @media (max-width: 768px) {
+            .word-grid {
+                grid-template-columns: repeat(20, 25px);
+                grid-template-rows: repeat(15, 25px);
+            }
+            .letter {
+                width: 23px;
+                height: 23px;
+                font-size: 12px;
+            }
+            .game-area {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Sopa de Letras Mágica 🎯</h1>
+        <p class="subtitle">¡Encuentra todos los animales escondidos!</p>
+        
+        <div class="instructions">
+            <strong>🔍 Instrucciones:</strong> Haz clic en las letras para seleccionar las palabras. 
+            ¡Busca horizontal, vertical y diagonal!
+        </div>
+
+        <div class="game-area">
+            <div class="grid-container">
+                <div class="word-grid" id="wordGrid"></div>
+            </div>
+            
+            <div class="words-list">
+                <h3 class="words-title">🐾 Animales a encontrar:</h3>
+                <div id="wordsList"></div>
+                <div class="score">
+                    <div>🏆 Palabras encontradas: <span id="score">0</span>/8</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="celebration" id="celebration">
+        🎉 ¡Felicitaciones! 🎉<br>
+        ¡Has encontrado todos los animales!<br>
+        🏆 ¡Eres increíble! 🏆
+    </div>
+
+    <script>
+        const words = [
+            {word: 'GATO', emoji: '🐱'},
+            {word: 'PERRO', emoji: '🐶'},
+            {word: 'LEON', emoji: '🦁'},
+            {word: 'OSO', emoji: '🐻'},
+            {word: 'PATO', emoji: '🦆'},
+            {word: 'PEZ', emoji: '🐟'},
+            {word: 'MONO', emoji: '🐵'},
+            {word: 'RANA', emoji: '🐸'}
+        ];
+
+        const GRID_WIDTH = 20;
+        const GRID_HEIGHT = 15;
+        let grid = [];
+        let placedWords = [];
+        let selectedCells = [];
+        let foundWords = [];
+        let isSelecting = false;
+
+        // Crear la grilla vacía
+        function createEmptyGrid() {
+            grid = [];
+            for (let i = 0; i < GRID_HEIGHT; i++) {
+                grid[i] = [];
+                for (let j = 0; j < GRID_WIDTH; j++) {
+                    grid[i][j] = '';
+                }
+            }
+        }
+
+        // Colocar una palabra en la grilla
+        function placeWord(word, startRow, startCol, direction) {
+            const directions = {
+                horizontal: [0, 1],
+                vertical: [1, 0],
+                diagonal: [1, 1]
+            };
+            
+            const [dr, dc] = directions[direction];
+            const positions = [];
+            
+            for (let i = 0; i < word.length; i++) {
+                const row = startRow + i * dr;
+                const col = startCol + i * dc;
+                grid[row][col] = word[i];
+                positions.push([row, col]);
+            }
+            
+            placedWords.push({
+                word: word,
+                positions: positions,
+                found: false
+            });
+        }
+
+        // Verificar si una palabra puede ser colocada
+        function canPlaceWord(word, startRow, startCol, direction) {
+            const directions = {
+                horizontal: [0, 1],
+                vertical: [1, 0],
+                diagonal: [1, 1]
+            };
+            
+            const [dr, dc] = directions[direction];
+            
+            for (let i = 0; i < word.length; i++) {
+                const row = startRow + i * dr;
+                const col = startCol + i * dc;
+                
+                if (row < 0 || row >= GRID_HEIGHT || col < 0 || col >= GRID_WIDTH) {
+                    return false;
+                }
+                
+                if (grid[row][col] !== '' && grid[row][col] !== word[i]) {
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
+        // Colocar todas las palabras
+        function placeAllWords() {
+            const directions = ['horizontal', 'vertical', 'diagonal'];
+            
+            words.forEach(({word}) => {
+                let placed = false;
+                let attempts = 0;
+                
+                while (!placed && attempts < 100) {
+                    const direction = directions[Math.floor(Math.random() * directions.length)];
+                    const maxRow = direction === 'horizontal' ? GRID_HEIGHT : GRID_HEIGHT - word.length + 1;
+                    const maxCol = direction === 'vertical' ? GRID_WIDTH : GRID_WIDTH - word.length + 1;
+                    
+                    if (direction === 'diagonal') {
+                        const maxRowDiag = GRID_HEIGHT - word.length + 1;
+                        const maxColDiag = GRID_WIDTH - word.length + 1;
+                        const startRow = Math.floor(Math.random() * maxRowDiag);
+                        const startCol = Math.floor(Math.random() * maxColDiag);
+                        
+                        if (canPlaceWord(word, startRow, startCol, direction)) {
+                            placeWord(word, startRow, startCol, direction);
+                            placed = true;
+                        }
+                    } else {
+                        const startRow = Math.floor(Math.random() * maxRow);
+                        const startCol = Math.floor(Math.random() * maxCol);
+                        
+                        if (canPlaceWord(word, startRow, startCol, direction)) {
+                            placeWord(word, startRow, startCol, direction);
+                            placed = true;
+                        }
+                    }
+                    
+                    attempts++;
+                }
+            });
+        }
+
+        // Llenar espacios vacíos con letras aleatorias
+        function fillEmptySpaces() {
+            const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            
+            for (let i = 0; i < GRID_HEIGHT; i++) {
+                for (let j = 0; j < GRID_WIDTH; j++) {
+                    if (grid[i][j] === '') {
+                        grid[i][j] = letters[Math.floor(Math.random() * letters.length)];
+                    }
+                }
+            }
+        }
+
+        // Crear el HTML de la grilla
+        function createGridHTML() {
+            const gridElement = document.getElementById('wordGrid');
+            gridElement.innerHTML = '';
+            
+            for (let i = 0; i < GRID_HEIGHT; i++) {
+                for (let j = 0; j < GRID_WIDTH; j++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'letter';
+                    cell.textContent = grid[i][j];
+                    cell.dataset.row = i;
+                    cell.dataset.col = j;
+                    cell.addEventListener('mousedown', startSelection);
+                    cell.addEventListener('mouseenter', continueSelection);
+                    cell.addEventListener('mouseup', endSelection);
+                    gridElement.appendChild(cell);
+                }
+            }
+        }
+
+        // Crear la lista de palabras
+        function createWordsList() {
+            const wordsListElement = document.getElementById('wordsList');
+            wordsListElement.innerHTML = '';
+            
+            words.forEach(({word, emoji}) => {
+                const wordItem = document.createElement('div');
+                wordItem.className = 'word-item';
+                wordItem.innerHTML = `<span class="animal-emoji">${emoji}</span>${word}`;
+                wordItem.dataset.word = word;
+                wordsListElement.appendChild(wordItem);
+            });
+        }
+
+        // Funciones de selección
+        function startSelection(e) {
+            isSelecting = true;
+            selectedCells = [];
+            clearSelection();
+            selectCell(e.target);
+        }
+
+        function continueSelection(e) {
+            if (isSelecting) {
+                selectCell(e.target);
+            }
+        }
+
+        function endSelection(e) {
+            if (isSelecting) {
+                checkSelectedWord();
+                isSelecting = false;
+            }
+        }
+
+        function selectCell(cell) {
+            const row = parseInt(cell.dataset.row);
+            const col = parseInt(cell.dataset.col);
+            
+            if (!selectedCells.some(([r, c]) => r === row && c === col)) {
+                selectedCells.push([row, col]);
+                cell.classList.add('selected');
+            }
+        }
+
+        function clearSelection() {
+            document.querySelectorAll('.letter.selected').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            selectedCells = [];
+        }
+
+        function checkSelectedWord() {
+            const selectedWord = selectedCells.map(([row, col]) => grid[row][col]).join('');
+            
+            placedWords.forEach(placedWord => {
+                if ((placedWord.word === selectedWord || placedWord.word === selectedWord.split('').reverse().join('')) && !placedWord.found) {
+                    placedWord.found = true;
+                    foundWords.push(placedWord.word);
+                    markWordFound(placedWord);
+                    updateScore();
+                    
+                    if (foundWords.length === words.length) {
+                        setTimeout(showCelebration, 500);
+                    }
+                }
+            });
+            
+            clearSelection();
+        }
+
+        function markWordFound(placedWord) {
+            placedWord.positions.forEach(([row, col]) => {
+                const cell = document.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+                cell.classList.add('found');
+                cell.classList.remove('selected');
+            });
+            
+            const wordElement = document.querySelector(`[data-word="${placedWord.word}"]`);
+            if (wordElement) {
+                wordElement.classList.add('found');
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score').textContent = foundWords.length;
+        }
+
+        function showCelebration() {
+            document.getElementById('celebration').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('celebration').style.display = 'none';
+            }, 3000);
+        }
+
+        // Prevenir selección de texto
+        document.addEventListener('selectstart', e => e.preventDefault());
+
+        // Inicializar el juego
+        function initGame() {
+            createEmptyGrid();
+            placeAllWords();
+            fillEmptySpaces();
+            createGridHTML();
+            createWordsList();
+            updateScore();
+        }
+
+        // Iniciar el juego cuando la página esté lista
+        initGame();
+    </script>
+</body>
+</html>

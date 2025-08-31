@@ -1,0 +1,198 @@
+export const puzzleAgent = {
+  name: 'Agente Puzzle Educativo',
+  description: 'Crea puzzles de rompecabezas con imágenes y conceptos del tema',
+  type: 'specialized',
+  gameType: 'puzzle',
+  capabilities: ['Generación de piezas', 'Imágenes temáticas', 'Dificultad variable'],
+  estimatedTime: '8-12 minutos',
+
+  async generateGame(gameContext) {
+    try {
+      const config = this.getGameConfig(gameContext.options.difficulty);
+      const htmlContent = this.generateHTML(gameContext, config);
+      const metadata = this.createGameMetadata(gameContext, config);
+
+      return {
+        success: true,
+        gameType: 'puzzle',
+        title: metadata.title,
+        description: metadata.description,
+        instructions: metadata.instructions,
+        htmlContent: htmlContent,
+        estimatedTime: config.estimatedTime,
+        tokensUsed: 0
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: 'Error en generación de puzzle',
+        code: 'GENERATION_ERROR'
+      };
+    }
+  },
+
+  getGameConfig(difficulty) {
+    const configs = {
+      easy: { pieces: 9, gridSize: 3, estimatedTime: 8 },
+      medium: { pieces: 16, gridSize: 4, estimatedTime: 12 },
+      hard: { pieces: 25, gridSize: 5, estimatedTime: 18 }
+    };
+    return configs[difficulty] || configs.medium;
+  },
+
+  generateHTML(gameContext, config) {
+    const metadata = this.createGameMetadata(gameContext, config);
+    return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>${metadata.title}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%); margin: 0; padding: 20px; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .puzzle-container { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); max-width: 600px; width: 100%; }
+        .puzzle-header { text-align: center; margin-bottom: 30px; }
+        .puzzle-title { color: #333; font-size: 2.5em; margin: 0 0 10px 0; }
+        .puzzle-grid { display: grid; grid-template-columns: repeat(${config.gridSize}, 1fr); gap: 2px; aspect-ratio: 1; background: #ddd; border-radius: 10px; overflow: hidden; margin-bottom: 20px; }
+        .puzzle-piece { background: #007bff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s ease; color: white; font-weight: bold; font-size: 1.2em; }
+        .puzzle-piece:hover { background: #0056b3; }
+        .puzzle-piece.empty { background: #f8f9fa; }
+        .puzzle-stats { display: flex; justify-content: space-around; background: #f8f9fa; padding: 20px; border-radius: 10px; }
+        .stat-item { text-align: center; }
+        .stat-value { font-size: 1.5em; font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+    <div class="puzzle-container">
+        <div class="puzzle-header">
+            <h1 class="puzzle-title">${metadata.title}</h1>
+            <p>${metadata.description}</p>
+            <div><strong>Instrucciones:</strong> ${metadata.instructions}</div>
+        </div>
+        <div class="puzzle-grid" id="puzzleGrid"></div>
+        <div class="puzzle-stats">
+            <div class="stat-item">
+                <div class="stat-value" id="moves">0</div>
+                <div class="stat-label">Movimientos</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="timer">00:00</div>
+                <div class="stat-label">Tiempo</div>
+            </div>
+        </div>
+        <button onclick="shufflePuzzle()" style="width: 100%; padding: 15px; background: #007bff; color: white; border: none; border-radius: 10px; font-size: 1.1em; margin-top: 20px; cursor: pointer;">Mezclar Puzzle</button>
+    </div>
+
+    <script>
+        const gridSize = ${config.gridSize};
+        const totalPieces = ${config.pieces};
+        let puzzle = [];
+        let emptyIndex = totalPieces - 1;
+        let moves = 0;
+        let startTime = Date.now();
+        let gameTimer;
+
+        function initPuzzle() {
+            // Crear puzzle ordenado
+            for (let i = 0; i < totalPieces - 1; i++) {
+                puzzle[i] = i + 1;
+            }
+            puzzle[totalPieces - 1] = 0; // Espacio vacío
+            
+            shufflePuzzle();
+            renderPuzzle();
+            startTimer();
+        }
+
+        function renderPuzzle() {
+            const grid = document.getElementById('puzzleGrid');
+            grid.innerHTML = '';
+            
+            puzzle.forEach((piece, index) => {
+                const pieceElement = document.createElement('div');
+                pieceElement.className = piece === 0 ? 'puzzle-piece empty' : 'puzzle-piece';
+                pieceElement.textContent = piece === 0 ? '' : piece;
+                pieceElement.onclick = () => movePiece(index);
+                grid.appendChild(pieceElement);
+            });
+        }
+
+        function movePiece(index) {
+            const emptyIndex = puzzle.indexOf(0);
+            const canMove = isAdjacent(index, emptyIndex);
+            
+            if (canMove) {
+                [puzzle[index], puzzle[emptyIndex]] = [puzzle[emptyIndex], puzzle[index]];
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                renderPuzzle();
+                
+                if (isSolved()) {
+                    clearInterval(gameTimer);
+                    setTimeout(() => alert('¡Felicitaciones! Has resuelto el puzzle.'), 300);
+                }
+            }
+        }
+
+        function isAdjacent(index1, index2) {
+            const row1 = Math.floor(index1 / gridSize);
+            const col1 = index1 % gridSize;
+            const row2 = Math.floor(index2 / gridSize);
+            const col2 = index2 % gridSize;
+            
+            return (Math.abs(row1 - row2) === 1 && col1 === col2) || 
+                   (Math.abs(col1 - col2) === 1 && row1 === row2);
+        }
+
+        function shufflePuzzle() {
+            for (let i = 0; i < 1000; i++) {
+                const emptyIndex = puzzle.indexOf(0);
+                const adjacentIndices = [];
+                
+                for (let j = 0; j < totalPieces; j++) {
+                    if (isAdjacent(j, emptyIndex)) {
+                        adjacentIndices.push(j);
+                    }
+                }
+                
+                const randomIndex = adjacentIndices[Math.floor(Math.random() * adjacentIndices.length)];
+                [puzzle[emptyIndex], puzzle[randomIndex]] = [puzzle[randomIndex], puzzle[emptyIndex]];
+            }
+            moves = 0;
+            document.getElementById('moves').textContent = moves;
+            renderPuzzle();
+        }
+
+        function isSolved() {
+            for (let i = 0; i < totalPieces - 1; i++) {
+                if (puzzle[i] !== i + 1) return false;
+            }
+            return puzzle[totalPieces - 1] === 0;
+        }
+
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timer').textContent = 
+                    \`\${minutes.toString().padStart(2, '0')}:\${seconds.toString().padStart(2, '0')}\`;
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initPuzzle);
+    </script>
+</body>
+</html>`;
+  },
+
+  createGameMetadata(gameContext, config) {
+    const { subtopic } = gameContext;
+    return {
+      title: `Puzzle: ${subtopic.name}`,
+      description: `Resuelve este rompecabezas de ${config.pieces} piezas relacionado con ${subtopic.name}.`,
+      instructions: `Haz clic en las piezas adyacentes al espacio vacío para moverlas. Ordena los números del 1 al ${config.pieces - 1}.`
+    };
+  }
+};
+
+export default puzzleAgent;
