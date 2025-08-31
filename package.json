@@ -24,7 +24,8 @@
     "fresh:production": "node scripts/reset-production-data.js --force && npm run setup:production",
     "demo:production": "node scripts/demo-production-setup.js",
     "deploy:validate": "node scripts/deploy-render.js",
-    "deploy:optimize": "node scripts/deploy-render.js --create-optimized"
+    "deploy:optimize": "node scripts/deploy-render.js --create-optimized",
+    "fix:es-modules": "bash apply-es-modules-fix.sh"
   },
   "keywords": [],
   "author": "",

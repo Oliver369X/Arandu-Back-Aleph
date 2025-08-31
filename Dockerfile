@@ -57,7 +57,8 @@ FROM node:20-alpine AS runner
 RUN apk add --no-cache \
     dumb-init \
     openssl-dev \
-    ca-certificates
+    ca-certificates \
+    wget
 
 WORKDIR /app
 
@@ -90,16 +91,13 @@ USER schoolai
 # Exponer puerto
 EXPOSE 3001
 
-# Health check para verificar que la API está funcionando
+# Health check simple y confiable
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/api-v1/health', (res) => { \
-    if (res.statusCode === 200) process.exit(0); \
-    else process.exit(1); \
-  }).on('error', () => process.exit(1))"
+  CMD wget --no-verbose --tries=1 --spider http://localhost:3001/api-v1/health || exit 1
 
 # Script de arranque que espera la base de datos
 COPY --chown=schoolai:schoolai <<'EOF' /app/wait-for-db.js
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 
 async function waitForDatabase(maxRetries = 30) {
   const prisma = new PrismaClient();
@@ -120,9 +118,9 @@ async function waitForDatabase(maxRetries = 30) {
   process.exit(1);
 }
 
-waitForDatabase().then(() => {
+waitForDatabase().then(async () => {
   console.log('🚀 Starting SchoolAI backend...');
-  require('./src/index.js');
+  const { default: app } = await import('./src/index.js');
 }).catch(console.error);
 EOF
 
